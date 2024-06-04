@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css">
+    <title>Login</title>
+  </head>
+
+  <body>
+    <div id="content">
+    <form id="myForm">
+      <br /><br />
+      <label>Name: </label><br />
+      <input type="text" id="entry_name" /><br />
+
+      <label>Password: </label><br />
+      <input type="password" id="entry_password" /><br />
+
+      <button type="button" onclick="sendData()">Login</button>
+    </form>
+    <div id="notification"></div>
+  </div>
+  </body>
+</html>
+<script src="lm_frontend_library.js"></script>
+<script>
+  async function sendData() {
+    let name = document.getElementById("entry_name").value;
+    let password = document.getElementById("entry_password").value;
+
+    password = await getSha256Hash(password);
+
+    let dataCorrect = await checkLogin(name, password);
+    
+
+    if (dataCorrect) {
+      //set cookie
+      document.cookie = name + "||" + password;
+
+      notify("login success");
+
+      window.location.href = "home.html";
+    } else {
+      notify("name or password wrong");
+    }
+  }
+</script>

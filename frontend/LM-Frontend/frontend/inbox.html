@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css">
+    <title>Inbox</title>
+  </head>
+
+  <body>
+    <div id="content">
+      <div id="navigation"></div>
+    <h1>
+      Messages for
+      <div id="inbox_name"></div>
+    </h1>
+
+    <div id="messages"></div>
+    </div>
+  </body>
+</html>
+<script src="lm_frontend_library.js"></script>
+<script>
+  
+  loadNavigation();
+  checkCookie();
+  initializeInbox();
+
+  async function getMessageHTML(message) {
+    let link = "/getUserById/" + message.senderId;
+
+    let writer = await fetchFn(link, "GET");
+
+    let HTML = "";
+
+    let timestamp = message.timestamp.replace("T", " ").replace("Z", " ");
+
+    HTML += "<table>";
+    HTML += "<tr>";
+    HTML += "<td>" + timestamp + "</td>";
+    HTML += "</tr>";
+    HTML += "<tr>";
+    HTML += "<td>"+writer.name+" wrote: <br/>" + message.text + "</td>";
+    HTML += "</tr>";
+    HTML += "<tr>";
+    HTML += "<td> <a href='message.html?name=" + writer.name + "'> Reply</td>";
+    HTML += "</tr>";
+    HTML += "</table>";
+    HTML += "<br/>"
+
+    return HTML;
+  }
+
+  //loads the necessary values
+  async function initializeInbox() {
+    let inboxName = await getNameFromCookieText(document.cookie);
+    let inboxId = "";
+    let allMessages = [];
+    let inboxPassword = await getPasswordFromCookieText(document.cookie);
+
+    document.getElementById("inbox_name").innerHTML = inboxName;
+
+    inboxId = await getIdFromUsername(inboxName);
+
+    let messageLink = "/getReceivedMessages/" + inboxId;
+
+    allMessages = await fetchFn(messageLink, "GET", inboxPassword);
+
+    console.log(allMessages);
+
+    for (i in allMessages) {
+
+        let messageHTML = await getMessageHTML(allMessages[i]);
+
+        document.getElementById("messages").innerHTML += messageHTML;
+    }
+  }
+
+
+</script>

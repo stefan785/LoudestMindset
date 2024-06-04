@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shout Edit</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  
+  <body>
+  
+    <div id="content">
+      <div id="navigation"></div>
+    <form id="myForm">
+      <label>Edit your shout: </label>
+
+      <div id="shoutText"></div>
+      <button type="button" onclick="sendData()">Edit Shout!</button>
+    </form>
+    <div id="notification"></div>
+    </div>
+  </body>
+</html>
+
+<script src="lm_frontend_library.js"></script>
+
+<script>
+  checkCookie();
+  loadNavigation();
+  initialize();
+
+  async function getCurrentShoutId() {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    let shoutId = urlParams.get("id");
+    return shoutId;
+  }
+
+  //returns the Shout of the current edit-window
+  async function getShoutText() {
+    let name = await getNameFromCookieText(document.cookie);
+    let userId = await getIdFromUsername(name);
+    let link = "/getShouts/" + userId;
+    let shouts = await fetchFn(link, "GET");
+
+    let shoutId = await getCurrentShoutId();
+
+    let text = "";
+
+    for (i in shouts) {
+      if (shouts[i].id == shoutId) {
+        text = shouts[i].text;
+      }
+    }
+
+    return text;
+  }
+
+  async function initialize() {
+    let oldShoutText = await getShoutText();
+
+    let textfieldHTML =
+      '<input type="textarea" id="shout_text" value="' +
+      oldShoutText +
+      '"" /><br /><br />';
+
+    document.getElementById("shoutText").innerHTML = textfieldHTML;
+  }
+
+  async function sendData() {
+    let cookieText = document.cookie;
+    let name = await getNameFromCookieText(cookieText);
+    let password = await getPasswordFromCookieText(cookieText);
+    let userID = await getIdFromUsername(name);
+    let shoutText = document.getElementById("shout_text").value;
+    let shoutId = await getCurrentShoutId();
+    let response = "";
+
+    let shout = {
+      id: shoutId,
+      userId: userID,
+      text: shoutText,
+    };
+
+    let link = "/editShout";
+
+    response = await fetchFn(link, "PUT", password, shout);
+
+    if (response.text == shout.text) {
+      notify("shout edit successful");
+    } else {
+      notify("cannot edit shout");
+    }
+  }
+</script>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>outbox</title>
+  </head>
+
+  <body>
+    <div id="content">
+      <div id="navigation"></div>
+      <h1>
+        Messages sent by
+        <div id="outbox_name"></div>
+      </h1>
+
+      <div id="messages"></div>
+    </div>
+  </body>
+</html>
+<script src="lm_frontend_library.js"></script>
+<script>
+  loadNavigation();
+  checkCookie();
+  initializeOutbox();
+
+  async function getMessageHTML(message) {
+    let link = "/getUserById/" + message.senderId;
+
+    let writer = await fetchFn(link, "GET");
+
+    let HTML = "";
+
+    let timestamp = message.timestamp.replace("T", " ").replace("Z", " ");
+
+    HTML += "<table>";
+    HTML += "<tr>";
+    HTML += "<td>" + timestamp + "</td>";
+    HTML += "</tr>";
+    HTML += "<tr>";
+    HTML += "<td>" + message.text + "</td>";
+    HTML += "</tr>";
+    if (message.text != "Message deleted") {
+      HTML += "<tr>";
+      let deleteButtonHTML =
+        '<button type="button" onclick="deleteMessage(' +
+        message.id +
+        ')">delete</button>';
+      HTML += "<td>";
+      HTML += deleteButtonHTML;
+      let editButtonHTML =
+        '<button type="button" onclick="editMessage(' +
+        message.id +
+        ')">edit</button>';
+      HTML += editButtonHTML;
+      HTML += "</td>";
+      HTML += "</tr>";
+    }
+    HTML += "</table>";
+    HTML += "<br/>";
+
+    return HTML;
+  }
+
+  //loads the necessary values
+  async function initializeOutbox() {
+    let outboxName = await getNameFromCookieText(document.cookie);
+    let outboxId = "";
+    let allMessages = [];
+    let outboxPassword = await getPasswordFromCookieText(document.cookie);
+
+    document.getElementById("outbox_name").innerHTML = outboxName;
+
+    outboxId = await getIdFromUsername(outboxName);
+
+    let messageLink = "/getSentMessages/" + outboxId;
+
+    allMessages = await fetchFn(messageLink, "GET", outboxPassword);
+
+    console.log(allMessages);
+
+    for (i in allMessages) {
+      let messageHTML = await getMessageHTML(allMessages[i]);
+
+      document.getElementById("messages").innerHTML += messageHTML;
+    }
+  }
+
+  async function deleteMessage(messageId) {
+    let link = "/deleteMessage/" + messageId;
+
+    let password = await getPasswordFromCookieText(document.cookie);
+
+    try {
+      await fetchFn(link, "DELETE", password);
+    } catch (e) {
+      console.log("cannot delete message");
+    }
+
+    window.location.reload();
+  }
+
+  async function editMessage(messageId) {
+    window.location.href = "message_edit.html?id=" + messageId;
+  }
+</script>

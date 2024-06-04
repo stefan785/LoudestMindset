@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shout</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+    <div id="content">
+      <div id="navigation"></div>
+      <br /><br />
+    <form id="myForm">
+      <label>Your shout: </label><br/>
+      <input type="textarea" id="shout_text" /><br /><br />
+
+      <button type="button" onclick="sendData()">Shout!</button>
+    </form>
+    <div id="notification"></div>
+    </div>
+  </body>
+</html>
+
+<script src="lm_frontend_library.js"></script>
+
+<script>
+  loadNavigation();
+  checkCookie();
+
+  async function sendData() {
+    let cookieText = document.cookie;
+    let name = await getNameFromCookieText(cookieText);
+    let password = await getPasswordFromCookieText(cookieText);
+    let userID = await getIdFromUsername(name);
+    let shoutText = document.getElementById("shout_text").value;
+    let response = "";
+
+    let shout = {
+      userId: userID,
+      text: shoutText,
+    };
+
+    let link = "/createShout";
+
+    response = await fetchFn(link, "POST", password, shout);
+
+    if (response.text == shout.text) {
+      notify("shout successful");
+    } else {
+      notify("cannot shout");
+    }
+  }
+</script>

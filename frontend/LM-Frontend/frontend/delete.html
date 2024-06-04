@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delete</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="content">
+    <div id="navigation"></div>
+    <h1>Delete your account here:</h1>
+    <label>Password: </label><br/>
+    <input type="password" id="password" /><br />
+
+    <button type="button" onclick="sendData()">delete account</button>
+    </form>
+    <div id="notification"></div>
+  </div>
+</body>
+
+</html>
+<script src="lm_frontend_library.js"></script>
+<script>
+
+  loadNavigation();
+  checkCookie();
+
+  async function sendData() {
+    let password = document.getElementById("password").value;
+
+    password = await getSha256Hash(password);
+
+    let passwordCookie = await getPasswordFromCookieText(document.cookie);
+
+    let userName = await getNameFromCookieText(document.cookie);
+
+    if (password != passwordCookie) {
+      notify("wrong password");
+      return false;
+    }
+
+    let link = "/getUserByName/" + userName;
+
+    let userId = await getIdFromUsername(userName);
+
+    let deleteLink = "/deleteUser/" + userId;
+
+    let response = await fetchFn(deleteLink, "DELETE", password);
+
+    let lastLogoutLink = "</br><a href=logout.html>click here to exit</a>";
+
+    //check if deletion was successful:
+
+    let deletedUser = await fetchFn(link, "GET");
+
+    if (deletedUser.name != userName) {
+      notify("deletion successful" + lastLogoutLink);
+    } else {
+      notify("cannot delete account");
+    }
+
+  }
+</script>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Feed</title>
+</head>
+
+<body>
+    <div id="content">
+        <div id="navigation"></div>
+    <h1>Latest Shouts:</h1></br>
+    <div id="shouts"></div>
+    </div>
+</body>
+
+</html>
+<script src="lm_frontend_library.js"></script>
+<script>
+
+    loadNavigation();
+    checkCookie();
+    initialize();
+
+    async function initialize() {
+
+        let userName = await getNameFromCookieText(document.cookie);
+
+        let userId = await getIdFromUsername(userName);
+
+        let link = "/getListening/" + userId;
+
+        //an array of "listening-elements":
+        let listening = await fetchFn(link, "GET");
+
+        let allShouts = [];
+
+        for (i in listening) {
+
+            let link = "/getShouts/" + listening[i].senderId;
+
+            let loadedShouts = await fetchFn(link, "GET");
+
+            for (j in loadedShouts) {
+
+                allShouts.push(loadedShouts[j]);
+            }
+        }
+
+        let allShoutsSorted = await sortShouts(allShouts);
+        let shoutHTML = await getFeedShoutsHTML(allShoutsSorted);
+        document.getElementById("shouts").innerHTML = shoutHTML;
+    }
+
+    //generates the HTML-code for all the shouts
+    async function getFeedShoutsHTML(shouts) {
+
+        let HTML = "";
+
+
+        for (i in shouts) {
+            //format timestamp
+            let timestamp = shouts[i].timestamp.replace("T", " ").replace("Z", " ");
+            let userLink = "/getUserById/" + shouts[i].userId;
+            let user = await fetchFn(userLink, "GET");
+            let shoutId = shouts[i].id;
+            let senderLink = "<a href='profile.html?name=" + user.name + "'>" + user.name + "</a> shouted:</br>";
+            let shoutText = senderLink + shouts[i].text;
+            HTML += generateShoutHTML(shoutId, shoutText, timestamp, false);
+        }
+
+        return HTML;
+    }
+
+    //sort the array , start with newest shout
+    function sortShouts(shouts) {
+
+        shouts.sort(function (a, b) {
+
+            return new Date(b.timestamp) - new Date(a.timestamp);
+        });
+
+        return shouts;
+    }
+
+</script>

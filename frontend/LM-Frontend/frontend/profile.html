@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css">
+  <title>Profile</title>
+</head>
+
+<body>
+  <div id="content">
+    <div id="navigation"></div>
+  <h1><div id="profile_name"></div></h1>
+  <div id="profile_image"></div><br/>
+  <div id="profile_message_link"></div><br/>
+  <div id="profile_listening_button"></div><br/>
+  <div id="shouts"></div>
+  </div>
+</body>
+
+</html>
+<script src="lm_frontend_library.js"></script>
+<script>
+  loadNavigation();
+  checkCookie();
+  initializeProfile();
+
+  function getProfileName() {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    let profileName = urlParams.get("name");
+    return profileName;
+  }
+
+  //loads the necessary values
+  async function initializeProfile() {
+    let profileName = getProfileName();
+    let profileId = "";
+    let allShouts = [];
+
+    document.getElementById("profile_name").innerHTML = profileName; //'<h1>profileName</h1>';
+
+    profileId = await getIdFromUsername(profileName);
+
+    let messageLink =
+      "<a href='message.html?name=" +
+      profileName +
+      "'> write message to " +
+      profileName +
+      "</a>";
+
+    document.getElementById("profile_message_link").innerHTML = messageLink;
+
+    let userURL = "/getUserByName/" + profileName;
+
+    let user = await fetchFn(userURL, "GET");
+
+    let photoURL = "";
+
+    //get and load photo
+    if (user.photoId == null) {
+      photoURL = "profile_image.png";
+    } else {
+      let photo = await fetchFn(user.photoId, "GET");
+
+      photoURL = photo.url;
+    }
+
+    document.getElementById("profile_image").innerHTML =
+      '<img src="' + photoURL + '" width="200" height="200">';
+
+    console.log(user);
+
+    let link = "/getShouts/" + profileId;
+
+    allShouts = await fetchFn(link, "GET");
+
+    //console.log(allShouts);
+
+    let shoutHTML = await getShoutsHTML(allShouts, profileName);
+
+    document.getElementById("shouts").innerHTML = shoutHTML;
+
+    let viewerName = await getNameFromCookieText(document.cookie);
+
+    let buttonHTML = await generateListeningButtonHTML(profileName, viewerName);
+
+    document.getElementById("profile_listening_button").innerHTML = buttonHTML;
+  }
+
+  //generates the HTML-code for all the shouts
+  async function getShoutsHTML(shouts, profileName) {
+    let HTML = "";
+
+    let ownerStatus = false;
+
+    ownerStatus = await checkOwner(profileName);
+
+    for (i in shouts) {
+      //format timestamp
+      let timestamp = shouts[i].timestamp.replace("T", " ").replace("Z", " ");
+      let shoutId = shouts[i].id;
+      let shoutText = shouts[i].text;
+      HTML += generateShoutHTML(shoutId, shoutText, timestamp, ownerStatus);
+    }
+
+    return HTML;
+  }
+
+  async function editShout(shoutId) {
+
+    window.location.href = "shout_edit.html?id=" + shoutId;;
+
+  }
+
+
+  async function deleteShout(shoutId) {
+    let link = "/deleteShout/" + shoutId;
+
+    let password = await getPasswordFromCookieText(document.cookie);
+
+    try {
+      await fetchFn(link, "DELETE", password);
+    } catch (e) {
+      console.log("cannot delete shout");
+    }
+
+    window.location.reload();
+  }
+
+  //varies between listen and unlisten according to status
+  async function generateListeningButtonHTML(profileName, viewerName) {
+    let profileId = await getIdFromUsername(profileName);
+
+    let viewerId = await getIdFromUsername(viewerName);
+
+    // check if viewer is owner
+    if (profileId == viewerId) {
+      return "this is your profile";
+    }
+
+    let link = "/getListening/" + viewerId;
+
+    let listening = await fetchFn(link, "GET");
+
+    let listeningStatus = false;
+
+    for (i in listening) {
+      if (listening[i].senderId == profileId) {
+        listeningStatus = true;
+      }
+    }
+
+    let buttonName = "listen to " + profileName;
+    let buttonAction = "listen()";
+
+    if (listeningStatus == true) {
+      buttonName = "unlisten to " + profileName;
+      buttonAction = "unlisten()";
+    }
+
+    listeningButtonHTML =
+      '<button type="button" onclick="' +
+      buttonAction +
+      '">' +
+      buttonName +
+      "</button>";
+
+    return listeningButtonHTML;
+  }
+
+  //either listens(true) or unlistens(false)
+  async function listeningAction(actionParameter) {
+    let viewerName = await getNameFromCookieText(document.cookie);
+    let viewerId = await getIdFromUsername(viewerName);
+
+    let profileName = await getProfileName();
+    let profileId = await getIdFromUsername(profileName);
+
+    let listen = {
+      senderId: profileId,
+      receiverId: viewerId,
+    };
+
+    let password = await getPasswordFromCookieText(document.cookie);
+
+    if (actionParameter) {
+      let link = "/listenToUser";
+
+      await fetchFn(link, "POST", password, listen);
+    } else {
+      let link = "/unlistenToUser";
+
+      await fetchFn(link, "PUT", password, listen);
+    }
+
+    window.location.reload();
+  }
+
+  function listen() {
+    listeningAction(true);
+  }
+  function unlisten() {
+    listeningAction(false);
+  }
+</script>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Home</title>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="content">
+    <div id="navigation"></div>
+  <h1>
+    Welcome
+    <div id="username"></div>
+  </h1>
+  <h3>
+  <div id="profileLink"></div></br>
+  <a href="shout.html">shout</a></br>
+  <a href="feed.html">feed</a></br>
+  <a href="inbox.html">inbox</a></br>
+  <a href="outbox.html">outbox</a></br>
+  <a href="settings.html">settings</a></br>
+  <a href="logout.html">logout</a>
+</h3>
+</div>
+</body>
+
+</html>
+<script src="lm_frontend_library.js"></script>
+<script>
+
+  loadNavigation();
+
+  checkCookie();
+
+  initialize();
+
+  async function initialize() {
+
+    let name = "";
+    let password = "";
+    let cookieText = document.cookie;
+
+    name = await getNameFromCookieText(cookieText);
+    password = await getPasswordFromCookieText(cookieText);
+
+    document.getElementById("username").innerHTML = name;
+
+    addLink("profileLink", "profile", name);
+  }
+
+  function addLink(divName, documentName, userName) {
+    let link =
+      '<a href="' +
+      documentName +
+      ".html?name=" +
+      userName +
+      '">' +
+      documentName +
+      "</a>";
+    document.getElementById(divName).innerHTML = link;
+  }
+
+</script>

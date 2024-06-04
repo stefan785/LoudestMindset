@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div id="content">
+      <form id="myForm">
+        <br /><br />
+        <label>Name: </label>
+        <input type="text" id="entry_name" /><br /><br />
+
+        <label>Email: </label>
+        <input type="text" id="entry_email" /><br /><br />
+
+        <label>Password: </label>
+        <input type="password" id="entry_password" /><br /><br />
+
+        <label>Password again: </label>
+        <input type="password" id="entry_password2" /><br /><br />
+
+        <button type="button" onclick="sendData()">Send</button>
+      </form>
+
+      <div id="notification"></div>
+    </div>
+  </body>
+</html>
+
+<script src="lm_frontend_library.js"></script>
+<script>
+  async function sendData() {
+    let newName = document.getElementById("entry_name").value;
+    let newEmail = document.getElementById("entry_email").value;
+    let password = document.getElementById("entry_password").value;
+    let password2 = document.getElementById("entry_password2").value;
+
+    if (password != password2) {
+      notify("passwords do not match");
+      return false;
+    }
+
+    let hash = await getSha256Hash(password);
+
+    let user = {
+      name: newName,
+      email: newEmail,
+      password: hash,
+    };
+
+    //check if user already exists:
+    let nameResponse = await fetchFn("/getUserByName/" + user.name, "GET");
+
+    if (nameResponse.name == user.name) {
+      notify("name or email already taken");
+      return false;
+    }
+
+    await fetchFn("/createUser", "POST", null, user);
+
+    let userResponse = await fetchFn("/getUserByName/" + user.name, "GET");
+    let userSuccess = userResponse.email == user.email;
+
+    if (userSuccess) {
+
+      let text = "user creation successful<br/>";
+      text += "<a href='login.html'>click here to log in</a>";
+
+      notify(text);
+    } else {
+      notify("cannot create user");
+    }
+  }
+</script>

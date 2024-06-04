@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Message</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  
+  <body>
+  
+    <div id="content">
+      <div id="navigation"></div>
+    <form id="myForm">
+      <label>Edit Your Message: </label>
+      <div id="messageText"></div>
+
+      <button type="button" onclick="sendData()">Edit</button>
+    </form>
+    <div id="notification"></div>
+    </div>
+  </body>
+</html>
+
+<script src="lm_frontend_library.js"></script>
+<script>
+  loadNavigation();
+  checkCookie();
+  initialize();
+
+  async function getCurrentMessageId() {
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    let messageId = urlParams.get("id");
+    return messageId;
+  }
+
+  //returns the message of the current edit-window
+  async function getMessage() {
+    let name = await getNameFromCookieText(document.cookie);
+    let password = await getPasswordFromCookieText(document.cookie);
+    let userId = await getIdFromUsername(name);
+    let link = "/getSentMessages/" + userId;
+    let messages = await fetchFn(link, "GET", password);
+
+    let messageId = await getCurrentMessageId();
+
+    for (i in messages) {
+      if (messages[i].id == messageId) {
+        return messages[i];
+      }
+    }
+  }
+
+  async function initialize() {
+    let oldMessage = await getMessage();
+
+    let textfieldHTML =
+      '<input type="textarea" id="message_text" value="' +
+      oldMessage.text +
+      '"" /><br /><br />';
+
+    document.getElementById("messageText").innerHTML = textfieldHTML;
+  }
+
+  async function sendData() {
+    let writerPassword = await getPasswordFromCookieText(document.cookie);
+
+    let messageText = document.getElementById("message_text").value;
+
+    let message = await getMessage();
+
+    message.text = messageText;
+
+    let link = "/editMessage";
+
+    let resp = await fetchFn(link, "PUT", writerPassword, message);
+
+    if (resp.text == message.text) {
+      notify("Message edited");
+    } else {
+      notify("Cannot edit message");
+    }
+  }
+</script>

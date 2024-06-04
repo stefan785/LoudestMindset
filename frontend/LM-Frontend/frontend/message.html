@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Message</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  
+  <body>
+  
+    <div id="content">
+      <div id="navigation"></div>
+    <form id="myForm">
+      <label>Your Message: </label>
+      <input type="text" id="message" /><br /><br />
+
+      <button type="button" onclick="sendData()">Send</button>
+    </form>
+    <div id="notification"></div>
+    </div>
+  </body>
+</html>
+
+<script src="lm_frontend_library.js"></script>
+<script>
+
+  loadNavigation();
+  checkCookie();
+
+  async function sendData() {
+    const queryString = window.location.search;
+
+    const urlParams = new URLSearchParams(queryString);
+
+    let receiverName = urlParams.get("name");
+
+    let receiverId = await getIdFromUsername(receiverName);
+
+    let writerName = await getNameFromCookieText(document.cookie);
+
+    let writerId = await getIdFromUsername(writerName);
+
+    let writerPassword = await getPasswordFromCookieText(document.cookie);
+
+    let messageText = document.getElementById("message").value;
+
+    let message = {
+      senderId: writerId,
+      receiverId: receiverId,
+      text: messageText,
+    };
+
+    let link = "/createMessage";
+
+    let resp = await fetchFn(link, "POST", writerPassword, message);
+
+    if (resp.text == message.text) {
+      notify("Message sent");
+    } else {
+      notify("Cannot send message");
+    }
+  }
+</script>
