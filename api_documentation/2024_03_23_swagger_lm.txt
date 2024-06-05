@@ -1,0 +1,872 @@
+openapi: 3.0.3
+info:
+  title: loudest mindset - OpenAPI 3.0
+  description: |-
+    This is the API documentation for "loudest mindset" -
+    last update: 2024-03-23
+  version: "0.1"
+servers:
+  - url: http://127.0.0.1:8080
+tags:
+  - name: user
+    description: All user operations
+  - name: photo
+    description: Upload and view images
+  - name: shout
+    description: Make some shouts
+  - name: listen
+    description: Listen to users
+  - name: comment
+    description: Comment those shouts
+  - name: message
+    description: Send private messages
+
+paths:
+
+  /createUser:
+    post:
+      tags:
+        - user
+      summary: Add a new user
+      operationId: addUser
+      requestBody:
+        description: post the necessary data and receive full user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      responses:
+        '200':
+          description: User added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '405':
+          description: Invalid input
+        '406':
+          description: Name or email taken
+
+  /getUserByName/{userName}:
+    get:
+      tags:
+        - user
+      summary: Gets public data from user
+      operationId: getUserByName
+      parameters:
+        - name: userName
+          in: path
+          description: name of the wanted user
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /getUserById/{userId}:
+    get:
+      tags:
+        - user
+      summary: Gets public data from user
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          description: Id of the wanted user
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /updateUser:
+    put:
+      tags:
+        - user
+      summary: Updates data of a user
+      description: Updates data of a user
+      operationId: updateUser
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: updated attributes of user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User updated
+        '400':
+          description: Invalid data
+
+  /deleteUser/{userId}:
+    delete:
+      tags:
+        - user
+      summary: Deletes a user
+      description: Deletes a user
+      operationId: deleteUser
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: user with that id will be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User deleted
+        '400':
+          description: Invalid input
+
+  /user/{userId}/uploadPhoto:
+    post:
+      tags:
+        - photo
+      summary: uploads an image
+      description: ''
+      operationId: uploadFile
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: id of the uploader
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: successful upload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '400':
+          description: Invalid input
+          
+  /getPhoto/{id}:
+    get:
+      tags:
+        - photo
+      summary: Gets the photo with that id
+      operationId: getPhoto
+      parameters:
+        - name: id
+          in: path
+          description: Id of the wanted photo
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Photo found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '404':
+          description: Photosnot found  
+          
+  /getAllPhotos/{userId}:
+    get:
+      tags:
+        - photo
+      summary: Gets all phtoos (JSON) of that user
+      operationId: getAllPhotos
+      parameters:
+        - name: userId
+          in: path
+          description: Id of the wanted user
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Photos found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                $ref: '#/components/schemas/Photo'
+        '404':
+          description: Photos not found  
+
+  /deletePhoto/{photoId}:
+    delete:
+      tags:
+        - photo
+      summary: Deletes a photo
+      description: Deletes an photo
+      operationId: deletePhoto
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: photoId
+          in: path
+          description: photo with that id will be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Photo deleted
+        '400':
+          description: Invalid input
+
+  /createShout:
+    post:
+      tags:
+        - shout
+      summary: Add a new shout
+      operationId: addShout
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: adds a new shout to the system
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Shout'
+        required: false
+      responses:
+        '200':
+          description: Shout added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shout'
+        '405':
+          description: Invalid input
+
+  /getShouts/{userId}:
+    get:
+      tags:
+        - shout
+      summary: Gets all shouts from a specific user
+      operationId: getShouts
+      parameters:
+        - name: userId
+          in: path
+          description: Id of the wanted user
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Shouts found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                $ref: '#/components/schemas/Shout'
+        '404':
+          description: Shouts not found
+
+  /editShout:
+    put:
+      tags:
+        - shout
+      summary: Edit an existing shout
+      operationId: editShout
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: edits an existing shout
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Shout'
+        required: false
+      responses:
+        '200':
+          description: Shout edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shout'
+        '405':
+          description: Invalid input
+
+  /deleteShout/{shoutId}:
+    delete:
+      tags:
+        - shout
+      summary: Deletes a shout
+      description: Deletes a shout
+      operationId: deleteShout
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: shoutId
+          in: path
+          description: shout with that id will be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: shout deleted
+        '400':
+          description: Invalid input
+
+  /listenToUser:
+    post:
+      tags:
+        - listen
+      summary: Listen to a user
+      operationId: listenToUser
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of receiver
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: One user listens to another user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Listening'
+        required: false
+      responses:
+        '200':
+          description: Listening to User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Listening'
+        '405':
+          description: Invalid input
+
+  /getListening/{userId}:
+    get:
+      tags:
+        - listen
+      summary: Gets all listening data from a specific receiver
+      operationId: getListening
+      parameters:
+        - name: userId
+          in: path
+          description: Id of the wanted user
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Listening Data found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                $ref: '#/components/schemas/Listening'
+        '404':
+          description: Listening data not found
+
+  /unlistenToUser:
+    put:
+      tags:
+        - listen
+      summary: Don't listen to that user anymore
+      operationId: unlistenToUser
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of receiver
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: One user does not listens to another user anymore
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Listening'
+        required: false
+      responses:
+        '200':
+          description: Unlistening to User
+        '405':
+          description: Invalid input
+
+  /createComment:
+    post:
+      tags:
+        - comment
+      summary: Add a new comment
+      operationId: addComment
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: adds a new comment to a shout
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+        required: false
+      responses:
+        '200':
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '405':
+          description: Invalid input
+
+  /getComments/{shoutId}:
+    get:
+      tags:
+        - comment
+      summary: Gets all comments from a specific shout
+      operationId: getComments
+      parameters:
+        - name: shoutId
+          in: path
+          description: Id of the wanted shout
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Comments found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                $ref: '#/components/schemas/Comment'
+        '404':
+          description: Comments not found
+
+  /editComment:
+    put:
+      tags:
+        - comment
+      summary: Edit an existing comment
+      operationId: editComment
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: edits an existing comment
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+        required: false
+      responses:
+        '200':
+          description: Comment edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shout'
+        '405':
+          description: Invalid input
+
+  /deleteComment/{commentId}:
+    delete:
+      tags:
+        - comment
+      summary: Deletes a comment
+      description: Deletes a comment
+      operationId: deleteComment
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: commentId
+          in: path
+          description: comment with that id will be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: comment deleted
+        '400':
+          description: Invalid input
+  /createMessage:
+    post:
+      tags:
+        - message
+      summary: Add a new Message
+      operationId: addMessage
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: adds a new message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+        required: false
+      responses:
+        '200':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '405':
+          description: Invalid input
+
+  /getReceivedMessages/{userId}:
+    get:
+      tags:
+        - message
+      summary: Gets all Messages for a specific user
+      operationId: getReceivedMessages
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: Id of the user that received the messages
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Messages found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Messages not found
+
+  /getSentMessages/{userId}:
+    get:
+      tags:
+        - message
+      summary: Gets all Messages sent by a specific user
+      operationId: getSentMessages
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          description: Id of the user that has sent the messages
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Messages found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                $ref: '#/components/schemas/Message'
+        '404':
+          description: Messages not found
+
+  /editMessage:
+    put:
+      tags:
+        - message
+      summary: Edit an existing Message
+      operationId: editMessage
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: edits an existing Message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+        required: false
+      responses:
+        '200':
+          description: Message edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '405':
+          description: Invalid input
+
+  /deleteMessage/{messageId}:
+    delete:
+      tags:
+        - message
+      summary: Deletes a Message
+      description: Deletes a Message
+      operationId: deleteMessage
+      parameters:
+        - name: apiKey
+          in: header
+          description: hashed password of that user
+          required: true
+          schema:
+            type: string
+        - name: messageId
+          in: path
+          description: Message with that id will be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Message deleted
+        '400':
+          description: Invalid input
+
+components:
+  schemas:
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: auto generated by ORM or DBMS
+          example: 20
+        name:
+          type: string
+          description: must be unique
+          example: Mickey123
+        photoId:
+          type: integer
+          format: int64
+          description: photoId of the profile picture
+          example: 50
+        email:
+          type: string
+          example: name@address.com
+        password:
+          type: string
+          description: always sent and processed hashed, never cleartext
+          example: 098f6bcd4621d373cade4e832627b4f6
+        status:
+          type: integer
+          format: int32
+          description: code for the user status, eg. 1 for banned, 5 for admin
+          example: 3
+
+    Shout:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: auto generated by ORM or DBMS
+          example: 299
+        userId:
+          type: integer
+          format: int64
+          description: id of the creator
+          example: 20
+        text:
+          type: string
+          description: content of the shout
+          example: This is a shout
+        timestamp:
+          type: string
+          format : date-time
+          description: timestamp in ISO 8601 format
+          example: "2024-05-10T22:13:30+01:00"
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: auto generated by ORM or DBMS
+          example: 299
+        userId:
+          type: integer
+          format: int64
+          description: id of the creator
+          example: 20
+        shoutId:
+          type: integer
+          format: int64
+          description: shoutId of the corresponding shout
+          example: 50
+        text:
+          type: string
+          description: content of the shout
+          example: This is a comment
+        timestamp:
+          type: string
+          format : date-time
+          description: timestamp in ISO 8601 format
+          example: "2024-05-10T22:13:30+01:00"
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: id - for the DB/ORM
+        senderId:
+          type: integer
+          format: int64
+          description: id of the sender
+          example: 20
+        receiverId:
+          type: integer
+          format: int64
+          description: id of the receiver
+          example: 30
+        text:
+          type: string
+          description: content of the message
+          example: This is a message
+        timestamp:
+          type: string
+          format : date-time
+          description: timestamp in ISO 8601 format
+          example: "2024-05-10T22:13:30+01:00"
+    Listening:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: id - for the DB/ORM
+          example: 50
+        senderId:
+          type: integer
+          format: int64
+          description: id of the sender
+          example: 20
+        receiverId:
+          type: integer
+          format: int64
+          description: id of the one who is listening
+          example: 30
+    Photo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: unique id of the photo
+          example: 20
+        userId:
+          type: integer
+          format: int64
+          description: id of the uploader
+          example: 20
+        url:
+          type: string
+          description: path to the picture
+          example: ../images/1234/that_photo.png
+
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      name: apiKey
+      in: header
