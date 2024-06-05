@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LM-COMPLETION-TEST</title>
+  </head>
+
+  <body
+    style="
+      background-color: #000;
+      color: #fff;
+      font-family: Lucida Console, Courier New, monospace;
+    "
+  >
+    <h1 style="text-align: center">LOUDEST MINDSET COMPLETION TESTSCRIPT</h1>
+    <h4 style="text-align: center">2024-03-20 v2.0</h4>
+    <br />
+    <h3>Instructions:</h3>
+
+    <h5>
+      This script tests if essential features are functional via API-requests.
+      To further analyze results press F12 and check the console.
+      <br />
+      <br />
+      The implementation of loudest mindset must run during the test.
+      <br />
+      Users with the names "testuser1111" and "testuser2222" and the emails
+      "testuser1111@l.m" and "testuser2222@l.m" MUST NOT exist in the database
+      unless they are created by this script.
+      <br />
+      <br />
+      To disable CORS in chromium, open it with following command:
+      <br />
+      chromium --user-data-dir="~/chrome-dev-disabled-security"
+      --disable-web-security --disable-site-isolation-trials
+      <br />
+      <br />
+      Server-address:
+      <input type="text" id="serverAddress" value="http://127.0.0.1:8080" />
+      <button onclick="testEverything()">RUN TESTS</button>
+      Hint: You might have to klick twice.
+      <br />
+    </h5>
+    <h3>Results:</h3>
+    <h5>
+      <div id="globalResults"></div>
+    </h5>
+
+    <script>
+      const serverAddress = document.getElementById("serverAddress").value;
+
+      let globalResults = "";
+
+      function addBlueText(text) {
+        globalResults += "<div style='color: #99f'>" + text + "</div><br/>";
+      }
+
+      function addRedText(text) {
+        globalResults += "<div style='color: #f00'>" + text + "</div><br/>";
+      }
+
+      function addGreenText(text) {
+        globalResults += "<div style='color: #0f0'>" + text + "</div><br/>";
+      }
+
+      //prints the outputText + additional information if booleanVar is true
+      function printSuccess(outputText, booleanVar) {
+        if (booleanVar) {
+          addGreenText(outputText + " successful");
+        } else {
+          addRedText(outputText + " failed");
+        }
+      }
+
+      //returns true if element is found in the list(or subelements):
+      function findElementInList(element, list) {
+        for (let i in list) {
+          for (let j in list[i]) {
+            if (list[i][j] == element) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+    /*================================================================================================================
+    *
+    *
+    * GENERAL FUNCTIONS
+    * 
+    * 
+    ================================================================================================================*/
+
+      // general POST-function
+      // returns response
+      async function postFn(link, requestBody) {
+        let generalResponse = "";
+        await fetch(serverAddress + link, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apiKey: "1234",
+          },
+          body: JSON.stringify(requestBody),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            generalResponse = Object.assign(data);
+          })
+          .catch((error) => console.error("Error:", error));
+        return generalResponse;
+      }
+
+      // general PUT-function
+      // returns response
+      async function putFn(link, requestBody) {
+        let generalResponse = "";
+        await fetch(serverAddress + link, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            apiKey: "1234",
+          },
+          body: JSON.stringify(requestBody),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            generalResponse = Object.assign(data);
+          })
+          .catch((error) => console.error("Error:", error));
+        return generalResponse;
+      }
+
+      //general GET-function
+      //returns response
+      async function getFn(link) {
+        let generalResponse = "";
+
+        await fetch(serverAddress + link, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            apiKey: "1234",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            generalResponse = Object.assign(data);
+          })
+          .catch((error) => console.error("Error:", error));
+
+        return generalResponse;
+      }
+
+      //general DELETE-function
+      //returns response
+      async function deleteFn(link) {
+        let generalResponse = "";
+
+        await fetch(serverAddress + link, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            apiKey: "1234",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            generalResponse = Object.assign(data);
+          })
+          .catch((error) => console.error("Error:", error));
+
+        return generalResponse;
+      }
+
+    /*================================================================================================================
+    *
+    *
+    * USER ACTIONS
+    * 
+    * 
+    ================================================================================================================*/
+
+      //generates users with specific values if they don't exist
+      //prints to HTML if operation was successful
+      //returns their id's as JSON for further processing
+      async function testUserCreation() {
+        //create users:
+
+        user1 = {
+          name: "testuser1111",
+          email: "testuser1111@l.m",
+          password: "1234",
+        };
+
+        user2 = {
+          name: "testuser2222",
+          email: "testuser2222@l.m",
+          password: "1234",
+        };
+
+        await postFn("/createUser", user1);
+        await postFn("/createUser", user2);
+
+        //check if actually created and get ids:
+
+        let userResponse1 = await getFn("/getUserByName/" + user1.name);
+        let userResponse2 = await getFn("/getUserByName/" + user2.name);
+
+        let id1 = userResponse1.id;
+        let id2 = userResponse2.id;
+
+        userSuccess = userResponse1.email == user1.email;
+        printSuccess("user creation", userSuccess);
+
+        response = { userId1: id1, userId2: id2 };
+        return response;
+      }
+
+      //updates user with specific values
+      //prints to HTML if operation was successful
+      async function testUserUpdate(userId) {
+        user = {
+          id: userId,
+          name: "testuser1111",
+          email: "testuser9999@l.m",
+          password: "1234",
+        };
+
+        await putFn("/updateUser", user);
+
+        updatedUser = await getFn("/getUserById/" + userId);
+
+        userUpdateSuccess = false;
+
+        if (updatedUser.email == user.email) {
+          userUpdateSuccess = true;
+        }
+
+        await printSuccess("user update", userUpdateSuccess);
+
+        //undo changes after this test to work properly:
+
+        oldUser = {
+          id: userId,
+          name: "testuser1111",
+          email: "testuser1111@l.m",
+          password: "1234",
+        };
+        await putFn("/updateUser", oldUser);
+      }
+
+      //deletes both testusers
+      //prints to HTML if operation was successful
+      async function testUserDelete(id1, id2) {
+        user1 = {
+          name: "testuser1111",
+          email: "testuser1111@l.m",
+          password: "1234",
+        };
+
+        user2 = {
+          name: "testuser2222",
+          email: "testuser2222@l.m",
+          password: "1234",
+        };
+
+        await deleteFn("/deleteUser/" + id1);
+        await deleteFn("/deleteUser/" + id2);
+
+        let foundUser1 = getFn("/getUserById/" + id1);
+        let foundUser2 = getFn("/getUserById/" + id2);
+
+        let deletionFailure = false;
+
+        if (foundUser1.name == user1.name || foundUser2.name == user2.name) {
+          deletionFailure = true;
+        }
+
+        printSuccess("user deletion", !deletionFailure);
+      }
+
+    /*================================================================================================================
+    *
+    *
+    * LISTENING ACTIONS
+    * 
+    * 
+    ================================================================================================================*/
+
+      //tests if one user can listen to another
+      //prints to HTML if operation was successful
+      async function testListeningCreation(id1, id2) {
+        //make 1 listen to 2:
+
+        let listening = {
+          receiverId: id1,
+          senderId: id2,
+        };
+
+        await postFn("/listenToUser", listening);
+
+        //test if it worked:
+
+        let listeningResponse = await getFn("/getListening/" + id1);
+
+        let listeningSuccess = false;
+
+        for (let i in listeningResponse) {
+          if (
+            listeningResponse[i].senderId == id2 &&
+            listeningResponse[i].receiverId == id1
+          ) {
+            listeningSuccess = true;
+          }
+        }
+
+        printSuccess("listening creation", listeningSuccess);
+      }
+
+      async function testListeningDeletion(id1, id2) {
+        let listening = {
+          receiverId: id1,
+          senderId: id2,
+        };
+
+        await putFn("/unlistenToUser", listening);
+
+        //test if it worked:
+
+        let listeningResponse = await getFn("/getListening/" + id1);
+
+        let listeningDeletion = true;
+
+        for (let i in listeningResponse) {
+          if (
+            listeningResponse[i].senderId == id2 &&
+            listeningResponse[i].receiverId == id1
+          ) {
+            listeningDeletion = false;
+          }
+        }
+
+        await printSuccess("listening deletion", listeningDeletion);
+      }
+
+    /*================================================================================================================
+    *
+    *
+    * SHOUT ACTIONS
+    * 
+    * 
+    ================================================================================================================*/
+
+      //tests shout creation with an userId
+      //prints to HTML if operation was successful
+      //returns shoutId for further testing
+      async function testShoutCreation(userId) {
+        //make shout:
+
+        let shout = {
+          userId: userId,
+          text: "testshout",
+        };
+
+        await postFn("/createShout", shout);
+
+        let shoutResponse = await getFn("/getShouts/" + userId);
+
+        //important for later testing:
+
+        let newShoutId = "";
+        let shoutSuccess = false;
+        for (let s in shoutResponse) {
+          if (shoutResponse[s].text == shout.text) {
+            newShoutId = shoutResponse[s].id;
+
+            shoutSuccess = true;
+          }
+        }
+
+        printSuccess("shout creation", shoutSuccess);
+
+        return newShoutId;
+      }
+
+      //tests shout update with an userId and shoutId
+      //prints to HTML if operation was successful
+      async function testShoutUpdate(userId, shoutId) {
+        let shout = {
+          userId: userId,
+          id: shoutId,
+          text: "editedShout",
+        };
+
+        editedShout = await putFn("/editShout", shout);
+
+        editShoutSuccess = false;
+
+        if (editedShout.text == shout.text) {
+          editShoutSuccess = true;
+        }
+
+        printSuccess("shout update", editShoutSuccess);
+      }
+
+      //tests shout delete with userId shoutId
+      //prints to HTML if operation was successful
+      async function testShoutDelete(userId, shoutId) {
+        let shout = {
+          userId: userId,
+          id: shoutId,
+          text: "editedShout",
+        };
+
+        await deleteFn("/deleteShout/" + shoutId);
+
+        let shoutResponse = await getFn("/getShouts/" + userId);
+
+        let deleteFailure = false;
+        for (let s in shoutResponse) {
+          if (shoutResponse[s].text == shout.text) {
+            deleteFailure = true;
+          }
+        }
+
+        await printSuccess("shout deletion", !deleteFailure);
+      }
+
+    /*================================================================================================================
+    *
+    *
+    * COMMENT ACTIONS
+    * 
+    * 
+    ================================================================================================================*/
+
+      //tests comment creation with newShoutId
+      //prints to HTML if operation was successful
+      //returns id of posted comment
+      async function testCommentCreation(newShoutId) {
+        let comment = {
+          userId: id1,
+          shoutId: newShoutId,
+          text: "Testcomment",
+        };
+
+        postedComment = await postFn("/createComment", comment);
+        let commentResponse = await getFn("/getComments/" + newShoutId);
+        let commentSuccess = await findElementInList(
+          comment.text,
+          commentResponse
+        );
+        printSuccess("comment creation", commentSuccess);
+
+        return postedComment.id;
+      }
+
+      //tests comment update
+      //prints to HTML if operation was successful
+      async function testCommentUpdate(userId, shoutId, commentId) {
+        let comment = {
+          userId: userId,
+          shoutId: shoutId,
+          id: commentId,
+          text: "editedComment",
+        };
+
+        editedComment = await putFn("/editComment", comment);
+
+        editCommentSuccess = false;
+
+        if (comment.text == editedComment.text) {
+          editCommentSuccess = true;
+        }
+
+        await printSuccess("comment update", editCommentSuccess);
+      }
+
+      //tests commente deletion
+      //prints to HTML if operation was successful
+      async function testCommentDelete(userId, shoutId, commentId, newShoutId) {
+        let comment = {
+          userId: userId,
+          shoutId: shoutId,
+          id: commentId,
+          text: "editedComment",
+        };
+
+        await deleteFn("/deleteComment/" + commentId);
+
+        let commentResponse = await getFn("/getComments/" + newShoutId);
+        let deletionFailure = await findElementInList(
+          comment.text,
+          commentResponse
+        );
+        printSuccess("comment deletion", !deletionFailure);
+      }
+
+    /*================================================================================================================
+    *
+    *
+    * MESSAGE ACTIONS
+    * 
+    * 
+    ================================================================================================================*/
+
+      //tests if user with id1 can message id2
+      //prints to HTML if operation was successful
+      //returns id of new message for further testing
+      async function testMessageCreation(id1, id2) {
+        let message = {
+          senderId: id1,
+          receiverId: id2,
+          text: "Testmessage",
+        };
+
+        let postMessageResponse = await postFn("/createMessage", message);
+        let messageResponse = await getFn("/getReceivedMessages/" + id2);
+        let messageSuccess = findElementInList(message.text, messageResponse);
+        printSuccess("message creation", messageSuccess);
+
+        return postMessageResponse.id;
+      }
+
+      //tests if a message can be updated
+      //prints to HTML if operation was successful
+      async function testMessageUpdate(senderId, receiverId, messageId) {
+        let message = {
+          senderId: senderId,
+          receiverId: receiverId,
+          id: messageId,
+          text: "editedMessage",
+        };
+
+        let editedMessage = await putFn("/editMessage", message);
+
+        let editMessageSuccess = false;
+
+        if (editedMessage.text == message.text) {
+          editMessageSuccess = true;
+        }
+
+        printSuccess("message update", editMessageSuccess);
+      }
+
+      //tests if a message can be deleted
+      //prints to HTML if operation was successful
+      async function testMessageDelete(senderId, receiverId, messageId) {
+        let message = {
+          senderId: senderId,
+          receiverId: receiverId,
+          id: messageId,
+          text: "editedMessage",
+        };
+
+        await deleteFn("/deleteMessage/" + messageId);
+        let messageResponse = await getFn("/getReceivedMessages/" + id2);
+        let deletionFailure = findElementInList(message.text, messageResponse);
+
+        printSuccess("message deletion", !deletionFailure);
+      }
+
+    /*================================================================================================================
+    *
+    *
+    * MAIN TESTING FUNCTION
+    * 
+    * 
+    ================================================================================================================*/
+
+      //calls all tests in asynchronous manner
+      async function testEverything() {
+        //clear globalResults:
+        globalResults = "";
+
+        addBlueText("<br/>===== TESTING CREATION =====");
+
+        //test user creation, get id's
+        userIds = await testUserCreation();
+        id1 = userIds.userId1;
+        id2 = userIds.userId2;
+
+        //test if id1 can listen to id2:
+        await testListeningCreation(id1, id2);
+
+        //testing shout:
+        let newShoutId = await testShoutCreation(id1);
+
+        //testing comments:
+        let commendId = await testCommentCreation(newShoutId);
+
+        //testing messages:
+        let messageId = await testMessageCreation(id1, id2);
+
+        //console.log(messageId);
+
+        addBlueText("<br/>===== TESTING UPDATE =====");
+
+        await testUserUpdate(id1);
+
+        await addGreenText("listening has no update");
+
+        await testShoutUpdate(id1, newShoutId);
+
+        await testCommentUpdate(id1, newShoutId, commendId);
+
+        await testMessageUpdate(id1, id2, messageId);
+
+        addBlueText("<br/>===== TESTING DELETE =====");
+
+        await testListeningDeletion(id1, id2);
+
+        await testMessageDelete(id1, id2, messageId);
+
+        await testCommentDelete(id1, id2, commendId, newShoutId);
+
+        await testShoutDelete(id1, newShoutId);
+
+        await testUserDelete(id1, id2);
+
+        //add globalResults to HTML
+        document.getElementById("globalResults").innerHTML = globalResults;
+      }
+    </script>
+  </body>
+</html>
