@@ -1,13 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=^, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Comments</title>
-</head>
-<body>
-
-    <h1>Here shall be comments</h1>
-    
-</body>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .comment {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 10px;
+      }
+      .comment p {
+        margin: 0 0 10px;
+      }
+      .comment small {
+        display: block;
+        color: #555;
+      }
+      .comment button {
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content">
+      <div id="navigation"></div>
+      <form id="commentForm">
+        <label>Your Comment: </label>
+        <input type="text" id="commentText" /><br /><br />
+        <button type="button" onclick="sendComment()">Send Comment</button>
+      </form>
+      <div id="notification"></div>
+      <div id="commentsList"></div>
+    </div>
+  </body>
 </html>
+
+<script src="lm_frontend_library.js"></script>
+<script>
+  loadNavigation();
+  checkCookie();
+
+  // Function to send a new comment
+  async function sendComment() {
+    const shoutId = new URLSearchParams(window.location.search).get("shoutId");
+    const commenterName = await getNameFromCookieText(document.cookie);
+    const commenterId = await getIdFromUsername(commenterName);
+    const commenterPassword = await getPasswordFromCookieText(document.cookie);
+    const commentText = document.getElementById("commentText").value;
+
+    const comment = {
+      userId: commenterId,
+      shoutId: shoutId,
+      text: commentText,
+    };
+    const link = "/createComment";
+    const resp = await fetchFn(link, "POST", commenterPassword, comment);
+
+    if (resp.text == comment.text) {
+      notify("Comment added");
+      loadComments();
+    } else {
+      notify("Cannot add comment");
+    }
+  }
+
+  // Function to load comments
+  async function loadComments() {
+    const shoutId = new URLSearchParams(window.location.search).get("shoutId");
+    const link = "/getComments/" + shoutId;
+    const comments = await fetchFn(link, "GET");
+    const commenterName = await getNameFromCookieText(document.cookie);
+    const commenterId = await getIdFromUsername(commenterName);
+
+    let commentsHTML = "";
+    for (const comment of comments) {
+      const user = await fetchFn("/getUserById/" + comment.userId, "GET");
+      const userName = user.name;
+      const formattedDate = new Date(comment.timestamp).toLocaleString(); // Format timestamp
+
+      commentsHTML += `<div class="comment" id="comment-${comment.id}">
+                         <p>${comment.text}</p>
+                         <small>by ${userName} on ${formattedDate}</small>`;
+      if (
+        comment.userId === commenterId &&
+        comment.text !== "Comment deleted"
+      ) {
+        commentsHTML += `<button type="button" onclick="editComment(${comment.id}, '${comment.text}', ${comment.userId}, ${comment.shoutId})">Edit</button>
+                         <button type="button" onclick="deleteComment(${comment.id})">Delete</button>`;
+      }
+      commentsHTML += `</div>`;
+    }
+
+    document.getElementById("commentsList").innerHTML = commentsHTML;
+  }
+
+  // Function to delete a comment
+  async function deleteComment(commentId) {
+    const link = "/deleteComment/" + commentId;
+    const password = await getPasswordFromCookieText(document.cookie);
+
+    try {
+      await fetchFn(link, "DELETE", password);
+      notify("Comment deleted");
+
+      const commentDiv = document.getElementById("comment-" + commentId);
+      if (commentDiv) {
+        commentDiv.querySelector("p").innerText = "Comment deleted"; // Mark comment as deleted
+        commentDiv
+          .querySelectorAll("button")
+          .forEach((button) => (button.style.display = "none")); // Hide buttons
+      }
+    } catch (e) {
+      console.log("cannot delete comment", e);
+      notify("Cannot delete comment");
+    }
+  }
+
+  // Function to edit a comment
+  async function editComment(commentId, commentText, userId, shoutId) {
+    document.getElementById("commentText").value = commentText; // Populate input with existing comment text
+    const button = document.querySelector("#commentForm button");
+    button.innerText = "Update Comment"; // Change button text
+    button.onclick = async function () {
+      await updateComment(commentId, userId, shoutId);
+    };
+  }
+
+  // Function to update a comment
+  async function updateComment(commentId, userId, shoutId) {
+    const commenterPassword = await getPasswordFromCookieText(document.cookie);
+    const commentText = document.getElementById("commentText").value;
+
+    const comment = {
+      id: commentId,
+      userId: userId,
+      shoutId: shoutId,
+      text: commentText,
+    };
+    const link = "/editComment";
+    const resp = await fetchFn(link, "PUT", commenterPassword, comment);
+
+    if (resp.text == comment.text) {
+      notify("Comment updated");
+      document.getElementById("commentText").value = "";
+      const button = document.querySelector("#commentForm button");
+      button.innerText = "Send Comment"; // Reset button text
+      button.onclick = sendComment;
+      loadComments();
+    } else {
+      notify("Cannot update comment");
+    }
+  }
+
+  window.onload = loadComments; // Load comments when the page loads
+</script>
